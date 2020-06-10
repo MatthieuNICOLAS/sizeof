@@ -7,5 +7,6 @@
 module.exports = {
   STRING: 2,
   BOOLEAN: 4,
-  NUMBER: 8
+  NUMBER: 8,
+  REFERENCE: 8
 }

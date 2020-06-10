@@ -2,33 +2,24 @@
 
 'use strict'
 
-var ECMA_SIZES = require('./byte_size')
-var Buffer = require('buffer').Buffer
+const ECMA_SIZES = require('./byte_size')
+const Buffer = require('buffer').Buffer
+let currentSymbol
 
 function sizeOfObject (object) {
   if (object == null) {
     return 0
   }
-
-  var bytes = 0
-  for (var key in object) {
-    if (!Object.hasOwnProperty.call(object, key)) {
-      continue
-    }
-
-    bytes += sizeof(key)
-    try {
-      bytes += sizeof(object[key])
-    } catch (ex) {
-      if (ex instanceof RangeError) {
-        // circular reference detected, final result might be incorrect
-        // let's be nice and not throw an exception
-        bytes = 0
-      }
-    }
+  if (object[currentSymbol]) {
+    return ECMA_SIZES.REFERENCE
   }
 
-  return bytes
+  object[currentSymbol] = true
+
+  if (object instanceof Map) {
+    return sizeofRec(Array.from(object))
+  }
+  return sizeofRec(Object.entries(object))
 }
 
 /**
@@ -38,11 +29,16 @@ function sizeOfObject (object) {
  * @returns {*}
  */
 function sizeof (object) {
+  currentSymbol = Symbol()
+  return sizeofRec(object)
+}
+
+function sizeofRec (object) {
   if (Buffer.isBuffer(object)) {
     return object.length
   }
 
-  var objectType = typeof (object)
+  const objectType = typeof (object)
   switch (objectType) {
     case 'string':
       return object.length * ECMA_SIZES.STRING
@@ -52,7 +48,7 @@ function sizeof (object) {
       return ECMA_SIZES.NUMBER
     case 'object':
       if (Array.isArray(object)) {
-        return object.map(sizeof).reduce(function (acc, curr) {
+        return object.map(sizeofRec).reduce(function (acc, curr) {
           return acc + curr
         }, 0)
       } else {
