@@ -80,4 +80,27 @@ describe('sizeof', function () {
   it('array support for NaN', function () {
     sizeof([null, undefined, 3, 4]).should.equal(16)
   })
+
+  it('should count duplicates as references', function () {
+    const object = { a: 1, b: 2 }
+    const expectedSizeofObject = 2 * 2 + 2 * 8
+    const array = [object, object]
+    const expectedSizeofArray = expectedSizeofObject + 8
+    sizeof(array).should.equal(expectedSizeofArray)
+  })
+
+  it('an item should not be counted as a duplicate in different runs of sizeof()', function () {
+    const object = { a: 1, b: 2 }
+    const expectedSizeofObject = 2 * 2 + 2 * 8
+    sizeof(object).should.equal(expectedSizeofObject)
+    sizeof(object).should.equal(expectedSizeofObject)
+  })
+
+  it('should support Map', function () {
+    const map = new Map()
+    map.set('a', 1)
+    map.set('bc', 2)
+    const expectedSizeOfMap = 3 * 2 + 2 * 8
+    sizeof(map).should.equal(expectedSizeOfMap)
+  })
 })
